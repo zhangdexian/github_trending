@@ -30,13 +30,14 @@ def scrape(language, filename):
 
         for i in items.items():
             title = i(".lh-condensed a").text()
-            owner = i(".lh-condensed span.text-normal").text()
+            # owner = i(".lh-condensed span.text-normal").text()
             description = i("p.col-9").text()
             url = i(".lh-condensed a").attr("href")
             url = "https://github.com" + url
+            octicon = i('.float-sm-right').text()
             # ownerImg = i("p.repo-list-meta a img").attr("src")
             # print(ownerImg)
-            f.write(u"* [{title}]({url}):{description}\n".format(title=title, url=url, description=description))
+            f.write(u"* [{title}]({url}):{description}({octicon})\n".format(title=title, url=url, description=description, octicon=octicon))
 
 
 def job():
