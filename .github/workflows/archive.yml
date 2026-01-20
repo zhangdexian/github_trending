@@ -1,0 +1,52 @@
+# 把根目录下形如 YYYY-MM-DD.md 的文件按 年/月 归档到 archives/YYYY/MM/
+name: Archive dated root markdown files
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # 每日 UTC 00:00 运行一次
+
+# 需要写权限以便 workflow push 提交
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    name: Archive dated md files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Archive root dated markdown files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+
+          moved=0
+          for f in ./*.md; do
+            [ -e "$f" ] || continue
+            filename=$(basename "$f")
+            if [[ "$filename" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})\.md$ ]]; then
+              year=${BASH_REMATCH[1]}
+              month=${BASH_REMATCH[2]}
+              target_dir="archives/${year}/${month}"
+              mkdir -p "$target_dir"
+              git mv "$f" "$target_dir/"
+              moved=1
+            fi
+          done
+
+          if [ "$moved" -eq 1 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: archive dated root markdown files by year/month" || echo "nothing to commit"
+            git push
+          else
+            echo "No matching dated markdown files found in the repository root."
+          fi
